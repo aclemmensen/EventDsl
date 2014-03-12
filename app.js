@@ -1,7 +1,7 @@
 var fs = require('fs'),
-	rdr = require('line-reader'),
-	util = require('util'),
-	file = process.argv[2];
+    rdr = require('line-reader'),
+    util = require('util'),
+    file = process.argv[2];
 
 if(!file)
 	throw "Provide spec file as first argument";
@@ -9,6 +9,7 @@ if(!file)
 if(!fs.existsSync(file))
 	throw "File '" + file + "' does not exist.";
 
+// Simple abstractions for building an AST
 function Type(name, ns, template) {
 	this.name = name;
 	this.namespace = ns;
@@ -47,21 +48,28 @@ function Property(type, name) {
 
 var types = [], lines = fs.readFileSync(file).toString().split("\n");
 
+// Types:
+// * TypeName { StringProperty s:AnoterStringProperty i:IntProperty l:LongProperty dt:DateTimeProperty }
+// * ChildType : TypeName { AdditionalString }
+// Namespaces: "NS: Name"
 var patt = /^([a-z]+)(\s*:\s*([a-z]+))?(\s*\{([\sa-z0-9:]+)\})?$/i,
-	nsp = /^NS:\s*([a-z]+)$/i,
-	namespace = '';
+    nsp = /^NS:\s*([a-z]+)$/i,
+    namespace = '';
 
 lines.forEach(function(line) {
 	line = line.replace(/[\r\n]+$/gi, '');
 	if(line) {
 		var nsparts = nsp.exec(line);
 		if(nsparts) {
+			// This is a namespace declaration, so use it for all following types.
 			namespace = nsparts[1];
 		} else {
+			// This is either a template or a class
 			var parts = patt.exec(line);
 			if(parts) {
 				var type = new Type(parts[1], namespace, parts[3]);
 				if(parts[5]) {
+					// This type has properties; forward the unparsed input
 					type.addProperties(parts[5]);
 				}
 				types.push(type);
@@ -70,11 +78,13 @@ lines.forEach(function(line) {
 	}
 });
 
+// Load all types in a hash for easy lookup
 var lookup = {};
 types.forEach(function(type) {
 	lookup[type.name] = type;
 });
 
+// Copy properties from template for all types that extend another type
 types.forEach(function(type) {
 	if(type.template) {
 		var template = lookup[type.template];
@@ -99,6 +109,7 @@ function typeCode(s) {
 	}
 }
 
+// Group types by namespace
 var namespaces = {};
 types.forEach(function(type) {
 	var ns = type.namespace;
@@ -110,6 +121,8 @@ var output = '';
 for(ns in namespaces) {
 	var concreteTypes = namespaces[ns].filter(function(type) { return !type.istemplate; });
 	if(!concreteTypes.length) continue;
+
+	// Output C# classes generated from the specification
 	output += util.format("namespace Events.%s\n{\n", ns || "Common");
 	concreteTypes.forEach(function(type) {
 		output += util.format("\tpublic class %s : IEvent\n\t{\n", type.name);
