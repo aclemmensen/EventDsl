@@ -1,0 +1,28 @@
+Event { EventId CorrelationId i:Version dt:Time }
+
+NS: Crawls
+CrawlStarted : Event
+CrawlEnded : Event
+
+NS: Pages
+Page : Event { Url }
+PageAdded : Page { Title Hash ContentLocation ContentType l:FileSize dt:LastModified }
+PageSeen : Page
+PageContentChanged : Page { Hash NewHash NewContent }
+PageTitleChanged : Page { NewTitle }
+PageRemoved : Page
+
+NS: Links
+Link : Event { Url }
+LinkSeen : Link
+LinkRemoved : Link
+LinkAdded : Link
+LinkBecameOkay : Link
+LinkBecameBroken : Link { i:Status Message }
+
+NS: Spellcheck
+Spellcheck : Event { s:Page }
+SpellcheckOrderedForPage : Spellcheck
+NewMisspellingFound : Spellcheck { Word Type }
+ExistingMisspellingRemoved : Spellcheck { Word Type }
+SpellingContentChanged : Spellcheck { Hash NewHash NewContent }
