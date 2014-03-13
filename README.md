@@ -21,9 +21,42 @@ Spec format
   as templates for other types, not as types in their own right.
 * Any line that starts with "NS:" is treated as the namespace to use for all following types.
 * The namespace is applied until another NS: declaration is seen.
+* All types outside an NS declaration are put in the `Common` namespace.
 
 Output
 ------
 
 The spec is turned into a C# file with basic indentation. All generated types are public,
 and all properties have both public getters and setters for easy serialization.
+
+Example
+-------
+
+Spec file:
+
+    Event { EventId CorrelationId i:Version dt:Time }
+    PageAdded : Event { Url }
+    LinkAdded : Event { Url }
+  
+C# output:
+
+    namespace Events.Common
+    {
+    	public class PageAdded : IEvent
+    	{
+    		public string EventId { get; set; }
+    		public string CorrelationId { get; set; }
+    		public int Version { get; set; }
+    		public DateTime Time { get; set; }
+    		public string Url { get; set; }
+    	}
+    
+    	public class LinkAdded : IEvent
+    	{
+    		public string EventId { get; set; }
+    		public string CorrelationId { get; set; }
+    		public int Version { get; set; }
+    		public DateTime Time { get; set; }
+    		public string Url { get; set; }
+    	}
+    }
